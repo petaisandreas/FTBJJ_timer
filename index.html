@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Trojans BJJ Timer</title>
-<meta name="description" content="Round timer για το Trojans Gym — γύροι, ξεκούραση και ηχητικά σήματα.">
+<title>FT BJJ Timer</title>
+<meta name="description" content="Round timer για το FT BJJ Limassol — γύροι, ξεκούραση και ηχητικά σήματα.">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -12,261 +12,286 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Trojans">
+<meta name="apple-mobile-web-app-title" content="FT BJJ">
 </head>
 <body>
 <style>
-  /* Το χρώμα του κάθε συλλόγου. Το applyGym() τα αλλάζει δυναμικά. */
-  /* Χρώματα Trojans Gym. */
+  /* FT BJJ Limassol: ασπρόμαυρο σαν το λογότυπο και το Instagram του συλλόγου,
+     γωνιακά σχήματα σαν την ασπίδα του λογότυπου. */
   :root {
-    --accent: #3FA45C;
-    --accent-dark: #2C7A42;
-    --accent-deep: #1E5A2F;
-    --accent-text: #04240F;
+    --accent: #ffffff;        /* Start, ενεργός γύρος, κουκκίδες */
+    --accent-dark: #cfcfcf;   /* hover του Start */
+    --accent-deep: #6a6a6a;   /* γύροι που τελείωσαν */
+    --accent-text: #0a0a0a;   /* κείμενο πάνω στο --accent */
+    --bg: #0a0a0a;
+    --panel: #121212;
+    --line: #262626;
+    --muted: #7a7a7a;
+    --rest: #3FB98A;
+    --warn: #F2A52B;
+    --font-display: "Helvetica Neue", "Arial Nova", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
+    --chamfer: 14px;          /* κομμένες γωνίες σαν την ασπίδα */
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: #0a0a0a; overscroll-behavior: none; }
+  html, body { background: var(--bg); overscroll-behavior: none; }
   #root {
     min-height: 100vh;
-    background: #0a0a0a;
+    background:
+      radial-gradient(ellipse at 50% 35%, #1a1a1a 0%, var(--bg) 65%);
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 20px 20px 40px;
     position: relative;
     overflow: hidden;
-    font-family: var(--font-sans, sans-serif);
+    font-family: var(--font-display);
+    color: #f2f2f2;
   }
-  
-  .live-clock-container {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    margin-bottom: 25px;
-    background: rgba(20, 20, 20, 0.7);
-    padding: 14px 34px;
-    border-radius: 12px;
-    border: 0.5px solid #2a2a2a;
+
+  /* Κεφαλίδα: λογότυπο + όνομα, όπως στα posts του συλλόγου. */
+  .brand-bar {
+    position: relative; z-index: 2;
+    width: 100%; max-width: 850px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--line);
   }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand img { height: 52px; width: auto; display: block; }
+  .brand-name {
+    font-size: 26px; font-weight: 900; line-height: 1;
+    letter-spacing: 0.02em; text-transform: uppercase;
+  }
+  .brand-sub, .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.32em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .brand-sub { margin-top: 6px; }
+
+  .live-clock-container { text-align: right; }
   .live-time {
-    font-size: clamp(44px, 11vw, 68px);
-    line-height: 1.05;
-    font-weight: bold;
+    font-size: clamp(28px, 6vw, 40px);
+    line-height: 1;
+    font-weight: 800;
     color: #ffffff;
-    letter-spacing: 1px;
     font-variant-numeric: tabular-nums;
   }
   .live-date {
-    font-size: clamp(15px, 3.2vw, 20px);
-    color: #888888;
+    font-family: var(--font-mono);
+    font-size: 11px; letter-spacing: 0.18em;
+    color: var(--muted);
     margin-top: 6px;
-    text-transform: capitalize;
+    text-transform: uppercase;
   }
 
   #logo-bg {
-    position: absolute; top: 50%; left: 50%;
+    position: absolute; top: 52%; left: 50%;
     transform: translate(-50%, -50%);
-    width: 500px; height: 500px;
-    opacity: 0.25; 
+    width: min(90vw, 560px); height: min(90vw, 560px);
+    opacity: 0.04;
     pointer-events: none;
     z-index: 0;
     display: flex; align-items: center; justify-content: center;
   }
-  #logo-bg img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-  }
-  .content { 
-    position: relative; 
-    z-index: 1; 
-    width: 100%; 
-    max-width: 850px;
-  }
-  h1.brand { font-size: 14px; font-weight: 500; letter-spacing: 0.15em; color: #444; text-align: center; margin-bottom: 25px; text-transform: uppercase; }
-  
-  .timer-display {
-    text-align: center;
-    margin-bottom: 35px;
-  }
-  .round-label { 
-    font-size: 26px; 
-    color: #aaa; 
-    letter-spacing: 0.1em; 
-    margin-bottom: 12px; 
-    text-transform: uppercase; 
-    font-weight: bold;
+  #logo-bg img { width: 100%; height: 100%; object-fit: contain; }
+  .content { position: relative; z-index: 1; width: 100%; max-width: 850px; }
+
+  .timer-display { text-align: center; margin-bottom: 30px; }
+  .round-label {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    color: #bdbdbd;
+    letter-spacing: 0.3em;
+    margin-bottom: 10px;
+    text-transform: uppercase;
   }
   .big-time {
-    font-size: clamp(110px, 26vw, 190px); 
-    font-weight: bold;
-    line-height: 0.95;
-    color: #f0f0f0;
+    font-size: clamp(110px, 27vw, 200px);
+    font-weight: 900;
+    line-height: 0.92;
+    color: #ffffff;
     font-variant-numeric: tabular-nums;
-    letter-spacing: -3px;
+    letter-spacing: -0.03em;
   }
-  .big-time.warning { color: #ef9f27; }
-  .big-time.resting { color: #1D9E75; }
-  .big-time.countdown { color: #7F77DD; }
-  
+  .big-time.warning { color: var(--warn); }
+  .big-time.resting { color: var(--rest); }
+  .big-time.countdown { color: #8d8d8d; }
+
   .phase-badge {
     display: inline-block;
     margin-top: 18px;
-    padding: 8px 24px; 
-    border-radius: 30px;
-    font-size: 20px; 
-    font-weight: bold;
-    letter-spacing: 0.08em;
+    padding: 9px 26px;
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
     text-transform: uppercase;
-    background: #1a1a1a;
-    color: #888;
-    border: 0.5px solid #444;
+    background: #161616;
+    color: var(--muted);
+    border: 1px solid #333;
+    clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+    padding-left: 30px; padding-right: 30px;
   }
-  .phase-badge.active { background: #1a2e1a; color: var(--accent); border-color: var(--accent-dark); }
-  .phase-badge.resting { background: #0e2a20; color: #1D9E75; border-color: #0F6E56; }
-  .phase-badge.countdown { background: #1e1a30; color: #AFA9EC; border-color: #534AB7; }
-  .phase-badge.warning { background: #2a1e00; color: #EF9F27; border-color: #BA7517; }
-  
+  .phase-badge.active { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .phase-badge.resting { background: #0d2a20; color: var(--rest); border-color: #1f6b50; }
+  .phase-badge.countdown { background: #1c1c1c; color: #d0d0d0; border-color: #444; }
+  .phase-badge.warning { background: var(--warn); color: #2a1a00; border-color: var(--warn); }
+
+  /* Κουκκίδες γύρων σε σχήμα ασπίδας. */
   .rounds-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 40px;
+    display: flex; flex-wrap: wrap;
+    align-items: center; justify-content: center;
+    gap: 10px;
+    margin-bottom: 36px;
   }
   .round-dot {
-    width: 16px; height: 16px; 
-    border-radius: 50%;
+    width: 16px; height: 19px;
     background: #2a2a2a;
-    border: 0.5px solid #555;
+    clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%);
     transition: all 0.3s;
   }
-  .round-dot.done { background: var(--accent-deep); border-color: var(--accent-dark); }
-  .round-dot.current { background: #534AB7; border-color: #7F77DD; width: 22px; height: 22px; }
+  .round-dot.done { background: var(--accent-deep); }
+  .round-dot.current { background: var(--accent); width: 22px; height: 26px; }
 
   .settings-grid {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
-    gap: 16px;
-    margin-bottom: 40px;
+    gap: 14px;
+    margin-bottom: 36px;
   }
   .setting-card {
-    background: #111;
-    border: 0.5px solid #333;
-    border-radius: 14px;
+    background: var(--panel);
     padding: 20px 12px;
+    text-align: center;
+    clip-path: polygon(0 0, calc(100% - var(--chamfer)) 0, 100% var(--chamfer), 100% 100%, var(--chamfer) 100%, 0 calc(100% - var(--chamfer)));
+    border-top: 2px solid #2f2f2f;
   }
   .setting-card label {
     display: block;
-    font-size: 15px; 
-    color: #666;
-    letter-spacing: 0.08em;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.28em;
     text-transform: uppercase;
     margin-bottom: 12px;
-    font-weight: 500;
   }
   .setting-card .val-display {
-    font-size: 36px; 
-    font-weight: bold;
+    font-size: 38px;
+    font-weight: 900;
     color: #fff;
     margin-bottom: 14px;
     font-variant-numeric: tabular-nums;
   }
-  .setting-card .val-display span { font-size: 18px; color: #666; }
-  
-  .stepper { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .setting-card .val-display span { font-size: 16px; color: var(--muted); font-weight: 700; margin-left: 2px; }
+
+  .stepper { display: flex; align-items: center; justify-content: center; gap: 10px; }
   .stepper button {
-    width: 44px; height: 44px; 
-    border-radius: 8px;
-    background: #1a1a1a;
-    border: 0.5px solid #444;
-    color: #ccc;
+    width: 46px; height: 42px;
+    background: #1c1c1c;
+    border: 1px solid #333;
+    color: #ddd;
     font-size: 24px;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: background 0.15s, color 0.15s;
     padding: 0;
+    border-radius: 2px;
   }
-  .stepper button:hover { background: #333; color: #fff; }
+  .stepper button:hover { background: #fff; color: #0a0a0a; }
   .stepper button:active { transform: scale(0.95); }
 
-  .controls { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; }
-  .btn-main {
-    padding: 0 50px;
-    height: 70px; 
-    border-radius: 35px;
-    font-size: 22px; 
-    font-weight: bold;
+  .controls { display: flex; gap: 16px; justify-content: center; margin-bottom: 28px; }
+  .btn-main, .btn-stop {
+    height: 70px;
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     cursor: pointer;
     border: none;
-    transition: all 0.15s;
-    letter-spacing: 0.05em;
+    transition: background 0.15s, color 0.15s;
+    clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
   }
+  .btn-main { padding: 0 64px; min-width: 240px; }
   .btn-start { background: var(--accent); color: var(--accent-text); }
   .btn-start:hover { background: var(--accent-dark); }
-  .btn-pause { background: #EF9F27; color: #412402; }
-  .btn-pause:hover { background: #BA7517; }
-  .btn-stop {
-    padding: 0 35px;
-    height: 70px; 
-    border-radius: 35px;
-    font-size: 20px;
-    font-weight: bold;
-    cursor: pointer;
-    background: #1a1a1a;
-    border: 0.5px solid #444;
-    color: #aaa;
-    transition: all 0.15s;
-  }
-  .btn-stop:hover { background: #2a1a1a; border-color: #993C1D; color: #D85A30; }
+  .btn-pause { background: var(--warn); color: #2a1a00; }
+  .btn-pause:hover { background: #d18a1c; }
+  .btn-stop { padding: 0 42px; background: #1c1c1c; color: #aaa; font-size: 18px; }
+  .btn-stop:hover { background: #2a1414; color: #E8603A; }
   .btn-main:active, .btn-stop:active { transform: scale(0.97); }
 
-  .sound-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px; }
-  .sound-row label { font-size: 18px; color: #666; }
-
-  /* Κινητά: τα τρία κουτιά ρυθμίσεων δεν χωρούσαν σε στενή οθόνη και το "Rest time"
-     κοβόταν στη δεξιά άκρη. Μικραίνουμε αποστάσεις, γράμματα και κουμπιά ώστε να
-     χωρούν και στις τρεις στήλες. */
-  @media (max-width: 480px) {
-    #root { padding: 16px 14px 32px; }
-    .settings-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-      margin-bottom: 28px;
-    }
-    .setting-card { padding: 14px 8px; border-radius: 12px; }
-    .setting-card label {
-      font-size: 12px;
-      letter-spacing: 0.04em;
-      margin-bottom: 8px;
-    }
-    .setting-card .val-display { font-size: 26px; margin-bottom: 10px; }
-    .setting-card .val-display span { font-size: 13px; }
-    .stepper { gap: 8px; }
-    .stepper button { width: 36px; height: 36px; font-size: 20px; }
-    .controls { gap: 12px; }
-    .live-clock-container { padding: 12px 20px; margin-bottom: 18px; }
+  .sound-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 6px; }
+  .sound-row label, .sound-row span {
+    font-family: var(--font-mono);
+    font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase;
+    color: var(--muted);
   }
   .toggle-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; }
   .toggle-wrap input[type=checkbox] { width: 44px; height: 24px; accent-color: var(--accent); cursor: pointer; }
+
+  .footer-tag {
+    margin-top: 34px;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 10px; letter-spacing: 0.35em; text-transform: uppercase;
+    color: #4a4a4a;
+  }
+
+  /* Κινητά: τα τρία κουτιά ρυθμίσεων πρέπει να χωράνε σε στενή οθόνη. */
+  @media (max-width: 480px) {
+    #root { padding: 14px 14px 30px; }
+    .brand img { height: 40px; }
+    .brand-name { font-size: 20px; }
+    .brand-sub { font-size: 9px; letter-spacing: 0.24em; }
+    .live-date { font-size: 9px; letter-spacing: 0.1em; }
+    .settings-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 26px;
+    }
+    .setting-card { padding: 14px 6px; --chamfer: 10px; }
+    .setting-card label { font-size: 10px; letter-spacing: 0.14em; margin-bottom: 8px; }
+    .setting-card .val-display { font-size: 26px; margin-bottom: 10px; }
+    .setting-card .val-display span { font-size: 12px; }
+    .stepper { gap: 6px; }
+    .stepper button { width: 36px; height: 36px; font-size: 20px; }
+    .controls { gap: 10px; }
+    .btn-main { padding: 0 34px; min-width: 0; font-size: 20px; }
+    .btn-stop { padding: 0 26px; font-size: 16px; }
+    .round-label { font-size: 13px; letter-spacing: 0.22em; }
+    .phase-badge { font-size: 13px; }
+  }
 </style>
 
 <div id="root">
-  <div class="live-clock-container">
-    <div class="live-time" id="live-time">00:00:00</div>
-    <div class="live-date" id="live-date">Δευτέρα, 1 Ιανουαρίου</div>
+  <div class="brand-bar">
+    <div class="brand">
+      <img src="logo.png" alt="FT BJJ logo" onerror="this.style.display='none';">
+      <div>
+        <div class="brand-name">FT BJJ</div>
+        <div class="brand-sub">Jiu-Jitsu · Limassol</div>
+      </div>
+    </div>
+    <div class="live-clock-container">
+      <div class="live-time" id="live-time">00:00:00</div>
+      <div class="live-date" id="live-date">Δευτέρα, 1 Ιανουαρίου</div>
+    </div>
   </div>
 
   <div id="logo-bg">
-    <img src="logo.png" alt="Trojans Gym logo" onerror="this.style.display='none';">
+    <img src="logo.png" alt="" onerror="this.style.display='none';">
   </div>
 
   <div class="content">
-    <h1 class="brand">Trojans Gym</h1>
-
     <div class="timer-display">
-      <div class="round-label" id="round-label">Round 1 of 5</div>
+      <div class="round-label" id="round-label">Round 01 / 05</div>
       <div class="big-time" id="big-time">05:00</div>
       <div class="phase-badge" id="phase-badge">Ready</div>
     </div>
@@ -278,24 +303,24 @@
         <label>Rounds</label>
         <div class="val-display" id="disp-rounds">5</div>
         <div class="stepper">
-          <button onclick="adjust('rounds',-1)">−</button>
-          <button onclick="adjust('rounds',1)">+</button>
+          <button onclick="adjust('rounds',-1)" aria-label="Fewer rounds">−</button>
+          <button onclick="adjust('rounds',1)" aria-label="More rounds">+</button>
         </div>
       </div>
       <div class="setting-card">
-        <label>Round time</label>
+        <label>Round</label>
         <div class="val-display" id="disp-round"><span>min</span></div>
         <div class="stepper">
-          <button onclick="adjust('roundTime',-30)">−</button>
-          <button onclick="adjust('roundTime',30)">+</button>
+          <button onclick="adjust('roundTime',-30)" aria-label="Shorter round">−</button>
+          <button onclick="adjust('roundTime',30)" aria-label="Longer round">+</button>
         </div>
       </div>
       <div class="setting-card">
-        <label>Rest time</label>
+        <label>Rest</label>
         <div class="val-display" id="disp-rest"><span>sec</span></div>
         <div class="stepper">
-          <button onclick="adjust('restTime',-5)">−</button>
-          <button onclick="adjust('restTime',5)">+</button>
+          <button onclick="adjust('restTime',-5)" aria-label="Shorter rest">−</button>
+          <button onclick="adjust('restTime',5)" aria-label="Longer rest">+</button>
         </div>
       </div>
     </div>
@@ -309,9 +334,11 @@
       <label for="sound-toggle">Sounds</label>
       <label class="toggle-wrap">
         <input type="checkbox" id="sound-toggle" checked>
-        <span style="font-size:16px;color:#666;font-weight:bold;">On</span>
+        <span>On</span>
       </label>
     </div>
+
+    <div class="footer-tag">FT BJJ · Limassol · Cyprus</div>
   </div>
 </div>
 
@@ -461,6 +488,12 @@ function updateLiveClock() {
 updateLiveClock();
 setInterval(updateLiveClock, 1000);
 
+// "Round 01 / 05", στο στυλ των posts του συλλόγου.
+function roundOf(n) {
+  const p = x => (x<10?'0':'')+x;
+  return p(n)+' / '+p(state.rounds);
+}
+
 function fmt(s) {
   const m = Math.floor(s/60);
   const sec = s%60;
@@ -498,17 +531,17 @@ function renderTimer() {
   if (state.phase === 'countdown') {
     bt.classList.add('countdown');
     pb.classList.add('countdown');
-    pb.textContent = 'Starting in...';
-    rl.textContent = 'Get ready!';
+    pb.textContent = 'Starting in';
+    rl.textContent = 'Get ready';
   } else if (state.phase === 'round') {
     if (state.timeLeft <= 10 && !state.paused) { bt.classList.add('warning'); pb.classList.add('warning'); pb.textContent = 'Warning — 10s'; }
     else { pb.classList.add('active'); pb.textContent = 'Round in progress'; }
-    rl.textContent = 'Round '+state.currentRound+' of '+state.rounds;
+    rl.textContent = 'Round '+roundOf(state.currentRound);
   } else if (state.phase === 'rest') {
     bt.classList.add('resting');
     pb.classList.add('resting');
     pb.textContent = 'Rest';
-    rl.textContent = 'Rest — next: round '+(state.currentRound+1)+' of '+state.rounds;
+    rl.textContent = 'Next · Round '+roundOf(state.currentRound+1);
   } else if (state.phase === 'done') {
     bt.textContent = '00:00';
     pb.textContent = 'Done!';
@@ -516,7 +549,7 @@ function renderTimer() {
     rl.textContent = 'All rounds complete';
   } else {
     pb.textContent = 'Ready';
-    rl.textContent = 'Round 1 of '+state.rounds;
+    rl.textContent = 'Round '+roundOf(1);
     bt.textContent = fmt(state.roundTime);
   }
 }

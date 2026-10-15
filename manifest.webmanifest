@@ -1,7 +1,7 @@
 {
-  "name": "Trojans BJJ Timer",
-  "short_name": "Trojans",
-  "description": "Round timer for Trojans Gym BJJ training.",
+  "name": "FT BJJ Timer",
+  "short_name": "FT BJJ",
+  "description": "Round timer for FT BJJ Limassol training.",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

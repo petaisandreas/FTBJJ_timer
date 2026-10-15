@@ -1,8 +1,8 @@
-# Trojans BJJ Timer
+# FT BJJ Timer
 
-Round timer for Trojans Gym. Works offline and installs to a phone home screen.
+Round timer for FT BJJ Limassol. Works offline and installs to a phone home screen.
 
-Live: https://petaisandreas.github.io/bjj-timer-trojans/
+Live: https://petaisandreas.github.io/FTBJJ_timer/
 
 ## How to use it on a phone
 
@@ -10,20 +10,17 @@ Open the link, then use the browser menu and **Add to Home Screen**. After that 
 opens fullscreen like an app, keeps the screen awake while a round is running, and
 works with no connection.
 
-## The other timer
-
-GT's timer is a separate project, so a change to one can never affect the other:
-[bjj_timer](https://github.com/petaisandreas/bjj_timer) - https://petaisandreas.github.io/bjj_timer/
-
 ## Changing the look
 
-- **Logo**: replace `logo.png` (a square PNG, around 500x500, works best).
+- **Logo**: replace `logo.png` (white logo on a transparent background works best).
+  The file name must be all lowercase: GitHub Pages treats `logo.PNG` and `logo.png`
+  as different files.
 - **Colour**: open `index.html`, find `:root {` near the top, and change `--accent`
-  (the Start button, active badge and round dots). `--accent-text` is the text drawn
+  (the Start button, active badge and round shields). `--accent-text` is the text drawn
   on top of it, so keep it dark against a light accent.
-- **Name shown on screen**: the `<h1 class="brand">` line in `index.html`.
+- **Name shown on screen**: the `brand-name` and `brand-sub` lines in `index.html`.
 
-After changing any file, bump `CACHE_VERSION` in `sw.js` (`-v1` to `-v2`) so phones
+After changing any file, bump `CACHE_VERSION` in `sw.js` (`-v2` to `-v3`) so phones
 that already installed it pick up the new version.
 
 ## Files
@@ -33,6 +30,6 @@ that already installed it pick up the new version.
 | `index.html` | The whole app: layout, styles and timer logic |
 | `sw.js` | Service worker; makes it work with no connection |
 | `manifest.webmanifest` | Name and icons used when installed to a home screen |
-| `logo.png` | Background watermark |
+| `logo.png` | Header logo and background watermark |
 | `icon-*.png` | Home-screen icons |
 | `*.mp3` | Round start, 10-second warning, round end, get-ready |
