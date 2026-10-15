@@ -1,6 +1,6 @@
 // Service worker: κρατάει το timer διαθέσιμο και χωρίς internet (π.χ. σε γυμναστήριο
 // με κακό σήμα). Ανέβασε το CACHE_VERSION όποτε αλλάζουν τα αρχεία παρακάτω.
-const CACHE_VERSION = 'ftbjj-timer-v5';
+const CACHE_VERSION = 'ftbjj-timer-v6';
 
 const APP_SHELL = [
   './',

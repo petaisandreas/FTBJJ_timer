@@ -45,7 +45,13 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px 20px 40px;
+    /* env(safe-area-inset-*): χώρος για τη μπάρα ώρας/μπαταρίας του κινητού και την
+       εγκοπή, όταν τρέχει ως εφαρμογή από την αρχική οθόνη. Σε κανονικό browser = 0. */
+    padding:
+      calc(20px + env(safe-area-inset-top, 0px))
+      calc(20px + env(safe-area-inset-right, 0px))
+      calc(40px + env(safe-area-inset-bottom, 0px))
+      calc(20px + env(safe-area-inset-left, 0px));
     position: relative;
     overflow: hidden;
     font-family: var(--font-display);
@@ -257,7 +263,13 @@
 
   /* Κινητά: τα τρία κουτιά ρυθμίσεων πρέπει να χωράνε σε στενή οθόνη. */
   @media (max-width: 480px) {
-    #root { padding: 14px 14px 30px; }
+    #root {
+      padding:
+        calc(14px + env(safe-area-inset-top, 0px))
+        calc(14px + env(safe-area-inset-right, 0px))
+        calc(30px + env(safe-area-inset-bottom, 0px))
+        calc(14px + env(safe-area-inset-left, 0px));
+    }
     .brand img { height: 40px; }
     .brand-name { font-size: 20px; }
     .brand-sub { font-size: 9px; letter-spacing: 0.24em; }
