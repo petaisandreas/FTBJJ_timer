@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trojans BJJ Timer</title>
+<meta name="description" content="Round timer για το Trojans Gym — γύροι, ξεκούραση και ηχητικά σήματα.">
+<meta name="theme-color" content="#0a0a0a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Trojans">
+</head>
+<body>
+<style>
+  /* Το χρώμα του κάθε συλλόγου. Το applyGym() τα αλλάζει δυναμικά. */
+  /* Χρώματα Trojans Gym. */
+  :root {
+    --accent: #3FA45C;
+    --accent-dark: #2C7A42;
+    --accent-deep: #1E5A2F;
+    --accent-text: #04240F;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: #0a0a0a; overscroll-behavior: none; }
+  #root {
+    min-height: 100vh;
+    background: #0a0a0a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px 20px 40px;
+    position: relative;
+    overflow: hidden;
+    font-family: var(--font-sans, sans-serif);
+  }
+  
+  .live-clock-container {
+    position: relative;
+    z-index: 2;
+    text-align: center;
+    margin-bottom: 25px;
+    background: rgba(20, 20, 20, 0.7);
+    padding: 14px 34px;
+    border-radius: 12px;
+    border: 0.5px solid #2a2a2a;
+  }
+  .live-time {
+    font-size: clamp(44px, 11vw, 68px);
+    line-height: 1.05;
+    font-weight: bold;
+    color: #ffffff;
+    letter-spacing: 1px;
+    font-variant-numeric: tabular-nums;
+  }
+  .live-date {
+    font-size: clamp(15px, 3.2vw, 20px);
+    color: #888888;
+    margin-top: 6px;
+    text-transform: capitalize;
+  }
+
+  #logo-bg {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px; height: 500px;
+    opacity: 0.25; 
+    pointer-events: none;
+    z-index: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #logo-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .content { 
+    position: relative; 
+    z-index: 1; 
+    width: 100%; 
+    max-width: 850px;
+  }
+  h1.brand { font-size: 14px; font-weight: 500; letter-spacing: 0.15em; color: #444; text-align: center; margin-bottom: 25px; text-transform: uppercase; }
+  
+  .timer-display {
+    text-align: center;
+    margin-bottom: 35px;
+  }
+  .round-label { 
+    font-size: 26px; 
+    color: #aaa; 
+    letter-spacing: 0.1em; 
+    margin-bottom: 12px; 
+    text-transform: uppercase; 
+    font-weight: bold;
+  }
+  .big-time {
+    font-size: clamp(110px, 26vw, 190px); 
+    font-weight: bold;
+    line-height: 0.95;
+    color: #f0f0f0;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -3px;
+  }
+  .big-time.warning { color: #ef9f27; }
+  .big-time.resting { color: #1D9E75; }
+  .big-time.countdown { color: #7F77DD; }
+  
+  .phase-badge {
+    display: inline-block;
+    margin-top: 18px;
+    padding: 8px 24px; 
+    border-radius: 30px;
+    font-size: 20px; 
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: #1a1a1a;
+    color: #888;
+    border: 0.5px solid #444;
+  }
+  .phase-badge.active { background: #1a2e1a; color: var(--accent); border-color: var(--accent-dark); }
+  .phase-badge.resting { background: #0e2a20; color: #1D9E75; border-color: #0F6E56; }
+  .phase-badge.countdown { background: #1e1a30; color: #AFA9EC; border-color: #534AB7; }
+  .phase-badge.warning { background: #2a1e00; color: #EF9F27; border-color: #BA7517; }
+  
+  .rounds-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+  .round-dot {
+    width: 16px; height: 16px; 
+    border-radius: 50%;
+    background: #2a2a2a;
+    border: 0.5px solid #555;
+    transition: all 0.3s;
+  }
+  .round-dot.done { background: var(--accent-deep); border-color: var(--accent-dark); }
+  .round-dot.current { background: #534AB7; border-color: #7F77DD; width: 22px; height: 22px; }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 40px;
+  }
+  .setting-card {
+    background: #111;
+    border: 0.5px solid #333;
+    border-radius: 14px;
+    padding: 20px 12px;
+  }
+  .setting-card label {
+    display: block;
+    font-size: 15px; 
+    color: #666;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+  .setting-card .val-display {
+    font-size: 36px; 
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .setting-card .val-display span { font-size: 18px; color: #666; }
+  
+  .stepper { display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .stepper button {
+    width: 44px; height: 44px; 
+    border-radius: 8px;
+    background: #1a1a1a;
+    border: 0.5px solid #444;
+    color: #ccc;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    padding: 0;
+  }
+  .stepper button:hover { background: #333; color: #fff; }
+  .stepper button:active { transform: scale(0.95); }
+
+  .controls { display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; }
+  .btn-main {
+    padding: 0 50px;
+    height: 70px; 
+    border-radius: 35px;
+    font-size: 22px; 
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    letter-spacing: 0.05em;
+  }
+  .btn-start { background: var(--accent); color: var(--accent-text); }
+  .btn-start:hover { background: var(--accent-dark); }
+  .btn-pause { background: #EF9F27; color: #412402; }
+  .btn-pause:hover { background: #BA7517; }
+  .btn-stop {
+    padding: 0 35px;
+    height: 70px; 
+    border-radius: 35px;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    background: #1a1a1a;
+    border: 0.5px solid #444;
+    color: #aaa;
+    transition: all 0.15s;
+  }
+  .btn-stop:hover { background: #2a1a1a; border-color: #993C1D; color: #D85A30; }
+  .btn-main:active, .btn-stop:active { transform: scale(0.97); }
+
+  .sound-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 10px; }
+  .sound-row label { font-size: 18px; color: #666; }
+
+  /* Κινητά: τα τρία κουτιά ρυθμίσεων δεν χωρούσαν σε στενή οθόνη και το "Rest time"
+     κοβόταν στη δεξιά άκρη. Μικραίνουμε αποστάσεις, γράμματα και κουμπιά ώστε να
+     χωρούν και στις τρεις στήλες. */
+  @media (max-width: 480px) {
+    #root { padding: 16px 14px 32px; }
+    .settings-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .setting-card { padding: 14px 8px; border-radius: 12px; }
+    .setting-card label {
+      font-size: 12px;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+    .setting-card .val-display { font-size: 26px; margin-bottom: 10px; }
+    .setting-card .val-display span { font-size: 13px; }
+    .stepper { gap: 8px; }
+    .stepper button { width: 36px; height: 36px; font-size: 20px; }
+    .controls { gap: 12px; }
+    .live-clock-container { padding: 12px 20px; margin-bottom: 18px; }
+  }
+  .toggle-wrap { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .toggle-wrap input[type=checkbox] { width: 44px; height: 24px; accent-color: var(--accent); cursor: pointer; }
+</style>
+
+<div id="root">
+  <div class="live-clock-container">
+    <div class="live-time" id="live-time">00:00:00</div>
+    <div class="live-date" id="live-date">Δευτέρα, 1 Ιανουαρίου</div>
+  </div>
+
+  <div id="logo-bg">
+    <img src="logo.png" alt="Trojans Gym logo" onerror="this.style.display='none';">
+  </div>
+
+  <div class="content">
+    <h1 class="brand">Trojans Gym</h1>
+
+    <div class="timer-display">
+      <div class="round-label" id="round-label">Round 1 of 5</div>
+      <div class="big-time" id="big-time">05:00</div>
+      <div class="phase-badge" id="phase-badge">Ready</div>
+    </div>
+
+    <div class="rounds-row" id="rounds-row"></div>
+
+    <div class="settings-grid">
+      <div class="setting-card">
+        <label>Rounds</label>
+        <div class="val-display" id="disp-rounds">5</div>
+        <div class="stepper">
+          <button onclick="adjust('rounds',-1)">−</button>
+          <button onclick="adjust('rounds',1)">+</button>
+        </div>
+      </div>
+      <div class="setting-card">
+        <label>Round time</label>
+        <div class="val-display" id="disp-round"><span>min</span></div>
+        <div class="stepper">
+          <button onclick="adjust('roundTime',-30)">−</button>
+          <button onclick="adjust('roundTime',30)">+</button>
+        </div>
+      </div>
+      <div class="setting-card">
+        <label>Rest time</label>
+        <div class="val-display" id="disp-rest"><span>sec</span></div>
+        <div class="stepper">
+          <button onclick="adjust('restTime',-5)">−</button>
+          <button onclick="adjust('restTime',5)">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-main btn-start" id="btn-main" onclick="handleMain()">Start</button>
+      <button class="btn-stop" id="btn-stop" onclick="handleStop()">Reset</button>
+    </div>
+
+    <div class="sound-row">
+      <label for="sound-toggle">Sounds</label>
+      <label class="toggle-wrap">
+        <input type="checkbox" id="sound-toggle" checked>
+        <span style="font-size:16px;color:#666;font-weight:bold;">On</span>
+      </label>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = {
+  rounds: 5,
+  roundTime: 300,
+  restTime: 60,
+  currentRound: 1,
+  phase: 'idle',
+  timeLeft: 300,
+  paused: false,
+  interval: null,
+  warned: false
+};
+
+// Αρχεία ήχου: αποκωδικοποιούνται μία φορά σε μνήμη (Web Audio API) ώστε η αναπαραγωγή
+// να ξεκινάει ακαριαία, χωρίς seek/buffering που έκοβε τον ήχο σε αργές τηλεοράσεις.
+const soundFiles = { go: "go.mp3", soon: "soon.mp3", ready: "ready.mp3", finish: "finish.mp3" };
+const soundBuffers = {};
+// Εφεδρικά <audio> στοιχεία: χρησιμοποιούνται αν το fetch αποτύχει (π.χ. όταν το
+// αρχείο ανοίγει τοπικά με file://, όπου ο browser μπλοκάρει το fetch).
+const fallbackAudio = {};
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function preloadSounds() {
+  const ctx = getAudioCtx();
+  Object.entries(soundFiles).forEach(([name, file]) => {
+    fetch(file)
+      .then(res => res.arrayBuffer())
+      .then(data => ctx.decodeAudioData(data))
+      .then(buf => { soundBuffers[name] = buf; })
+      .catch(e => {
+        console.log("Sound load failed, using fallback:", name, e);
+        const a = new Audio(file);
+        a.preload = 'auto';
+        fallbackAudio[name] = a;
+      });
+  });
+}
+preloadSounds();
+
+// Ξεκλείδωμα audio context μετά από click/touch (απαιτείται από τους περισσότερους browsers/TV)
+function unlockAudio() {
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+}
+document.body.addEventListener('touchstart', unlockAudio, { once: true });
+document.body.addEventListener('click', unlockAudio, { once: true });
+
+// Κεντρική λειτουργία αναπαραγωγής: κάθε κλήση δημιουργεί νέο, ανεξάρτητο source node
+// ώστε διαδοχικοί/επικαλυπτόμενοι ήχοι να μην κόβουν ο ένας τον άλλον.
+function playSound(name) {
+  if (!document.getElementById('sound-toggle').checked) return;
+  const buf = soundBuffers[name];
+  if (!buf) {
+    const fb = fallbackAudio[name];
+    if (fb) fb.cloneNode().play().catch(() => {});
+    return;
+  }
+  const ctx = getAudioCtx();
+  if (ctx.state === 'suspended') ctx.resume();
+  const source = ctx.createBufferSource();
+  source.buffer = buf;
+  source.connect(ctx.destination);
+  source.start(0);
+}
+
+// Ενημερωμένες Συναρτήσεις Ήχων
+function soundStart() { playSound('go'); }
+function soundEnd() { playSound('finish'); }
+function soundWarn() { playSound('soon'); }
+function soundReady() { playSound('ready'); }
+
+// Wake Lock: η οθόνη δεν σβήνει όσο μετράει ο χρόνος. Δουλεύει μόνο σε https
+// (ή localhost) — σε παλιότερους browsers απλά αγνοείται.
+let wakeLock = null;
+let wakeLockPending = false;
+let wakeLockBlocked = false;
+
+async function requestWakeLock() {
+  if (!('wakeLock' in navigator)) return;
+  if (wakeLock || wakeLockPending || wakeLockBlocked) return;
+  // Ο browser απορρίπτει το αίτημα όταν η σελίδα δεν είναι ορατή. Ξαναπροσπαθούμε
+  // μόνο όταν επιστρέψει η σελίδα ή σε νέο Start — όχι κάθε δευτερόλεπτο.
+  if (document.visibilityState !== 'visible') return;
+  wakeLockPending = true;
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; });
+  } catch (e) {
+    wakeLockBlocked = true;
+    console.log('Wake lock failed:', e && e.message);
+  } finally {
+    wakeLockPending = false;
+  }
+}
+
+function releaseWakeLock() {
+  if (!wakeLock) return;
+  const wl = wakeLock;
+  wakeLock = null;
+  wl.release().catch(() => {});
+}
+
+function timerIsRunning() {
+  return state.interval !== null && !state.paused &&
+         state.phase !== 'idle' && state.phase !== 'done';
+}
+
+// Καλείται μετά από κάθε αλλαγή κατάστασης: ζητάει ή αφήνει το lock ανάλογα.
+function syncWakeLock() {
+  if (timerIsRunning()) requestWakeLock(); else releaseWakeLock();
+}
+
+// Το lock χάνεται όταν η σελίδα φύγει στο παρασκήνιο — το ξαναζητάμε στην επιστροφή.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState !== 'visible') return;
+  wakeLockBlocked = false;
+  syncWakeLock();
+});
+
+// Service worker: επιτρέπει εγκατάσταση στην αρχική οθόνη και λειτουργία offline.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js')
+      .catch(e => console.log('Service worker registration failed:', e));
+  });
+}
+
+// Ρολόι και Ημερομηνία
+function updateLiveClock() {
+  const now = new Date();
+  const hrs = String(now.getHours()).padStart(2, '0');
+  const mins = String(now.getMinutes()).padStart(2, '0');
+  const secs = String(now.getSeconds()).padStart(2, '0');
+  document.getElementById('live-time').textContent = hrs + ':' + mins + ':' + secs;
+  
+  const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+  document.getElementById('live-date').textContent = now.toLocaleDateString('el-GR', options);
+}
+updateLiveClock();
+setInterval(updateLiveClock, 1000);
+
+function fmt(s) {
+  const m = Math.floor(s/60);
+  const sec = s%60;
+  return (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+}
+
+function renderDots() {
+  const row = document.getElementById('rounds-row');
+  row.innerHTML = '';
+  for (let i=1; i<=state.rounds; i++) {
+    const d = document.createElement('div');
+    d.className = 'round-dot';
+    if (i < state.currentRound) d.classList.add('done');
+    if (i === state.currentRound && state.phase !== 'idle') d.classList.add('current');
+    row.appendChild(d);
+  }
+}
+
+function renderSettings() {
+  document.getElementById('disp-rounds').textContent = state.rounds;
+  const rm = Math.floor(state.roundTime/60);
+  const rs = state.roundTime%60;
+  document.getElementById('disp-round').innerHTML = (rm>0?rm+'<span>m</span> ':'')+(rs>0?rs+'<span>s</span>':'');
+  document.getElementById('disp-rest').innerHTML = state.restTime+'<span>s</span>';
+}
+
+function renderTimer() {
+  const bt = document.getElementById('big-time');
+  const pb = document.getElementById('phase-badge');
+  const rl = document.getElementById('round-label');
+  bt.textContent = fmt(state.timeLeft);
+  bt.className = 'big-time';
+  pb.className = 'phase-badge';
+
+  if (state.phase === 'countdown') {
+    bt.classList.add('countdown');
+    pb.classList.add('countdown');
+    pb.textContent = 'Starting in...';
+    rl.textContent = 'Get ready!';
+  } else if (state.phase === 'round') {
+    if (state.timeLeft <= 10 && !state.paused) { bt.classList.add('warning'); pb.classList.add('warning'); pb.textContent = 'Warning — 10s'; }
+    else { pb.classList.add('active'); pb.textContent = 'Round in progress'; }
+    rl.textContent = 'Round '+state.currentRound+' of '+state.rounds;
+  } else if (state.phase === 'rest') {
+    bt.classList.add('resting');
+    pb.classList.add('resting');
+    pb.textContent = 'Rest';
+    rl.textContent = 'Rest — next: round '+(state.currentRound+1)+' of '+state.rounds;
+  } else if (state.phase === 'done') {
+    bt.textContent = '00:00';
+    pb.textContent = 'Done!';
+    pb.classList.add('active');
+    rl.textContent = 'All rounds complete';
+  } else {
+    pb.textContent = 'Ready';
+    rl.textContent = 'Round 1 of '+state.rounds;
+    bt.textContent = fmt(state.roundTime);
+  }
+}
+
+function updateMainBtn() {
+  const btn = document.getElementById('btn-main');
+  if (state.phase === 'idle') { btn.textContent = 'Start'; btn.className = 'btn-main btn-start'; }
+  else if (state.paused) { btn.textContent = 'Resume'; btn.className = 'btn-main btn-start'; }
+  else if (state.phase === 'done') { btn.textContent = 'Restart'; btn.className = 'btn-main btn-start'; }
+  else { btn.textContent = 'Pause'; btn.className = 'btn-main btn-pause'; }
+}
+
+function adjust(key, delta) {
+  if (state.phase !== 'idle') return;
+  if (key === 'rounds') state.rounds = Math.max(1, Math.min(20, state.rounds+delta));
+  if (key === 'roundTime') state.roundTime = Math.max(30, Math.min(1800, state.roundTime+delta));
+  if (key === 'restTime') state.restTime = Math.max(0, Math.min(300, state.restTime+delta));
+  state.timeLeft = state.roundTime;
+  renderSettings();
+  renderDots();
+  renderTimer();
+}
+
+function tick() {
+  if (state.paused) return;
+  if (state.phase === 'countdown') {
+    if (state.timeLeft > 0) {
+      state.timeLeft--;
+    } else {
+      state.phase = 'round';
+      state.timeLeft = state.roundTime;
+      state.warned = false;
+      soundStart();
+    }
+  } else if (state.phase === 'round') {
+    if (state.timeLeft === 10 && !state.warned) {
+      state.warned = true;
+      soundWarn();
+    }
+    if (state.timeLeft > 0) {
+      state.timeLeft--;
+    } else {
+      soundEnd();
+      if (state.currentRound >= state.rounds) {
+        state.phase = 'done';
+        clearInterval(state.interval);
+        state.interval = null;
+      } else if (state.restTime > 0) {
+        state.phase = 'rest';
+        state.timeLeft = state.restTime;
+      } else {
+        state.currentRound++;
+        state.phase = 'round';
+        state.timeLeft = state.roundTime;
+        state.warned = false;
+        soundStart();
+      }
+    }
+  } else if (state.phase === 'rest') {
+    if (state.timeLeft > 0) {
+      state.timeLeft--;
+    } else {
+      state.currentRound++;
+      state.phase = 'countdown';
+      state.timeLeft = 3;
+      soundReady();
+    }
+  }
+  renderTimer();
+  renderDots();
+  updateMainBtn();
+
+  if (state.phase === 'done') {
+    renderTimer(); renderDots(); updateMainBtn();
+  }
+  syncWakeLock();
+}
+
+function handleMain() {
+  if (state.phase === 'idle' || state.phase === 'done') {
+    state.currentRound = 1;
+    state.phase = 'countdown';
+    state.timeLeft = 3;
+    state.warned = false;
+    state.paused = false;
+    wakeLockBlocked = false;
+    if (state.interval) clearInterval(state.interval);
+    state.interval = setInterval(tick, 1000);
+    soundReady();
+  } else {
+    state.paused = !state.paused;
+  }
+  renderTimer(); renderDots(); updateMainBtn();
+  syncWakeLock();
+}
+
+function handleStop() {
+  if (state.interval) clearInterval(state.interval);
+  state.interval = null;
+  state.phase = 'idle';
+  state.currentRound = 1;
+  state.timeLeft = state.roundTime;
+  state.paused = false;
+  state.warned = false;
+  renderTimer(); renderDots(); updateMainBtn();
+  syncWakeLock();
+}
+
+renderSettings();
+renderDots();
+renderTimer();
+updateMainBtn();
+</script>
+
+</body>
+</html>
