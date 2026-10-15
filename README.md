@@ -20,7 +20,7 @@ works with no connection.
   on top of it, so keep it dark against a light accent.
 - **Name shown on screen**: the `brand-name` and `brand-sub` lines in `index.html`.
 
-After changing any file, bump `CACHE_VERSION` in `sw.js` (e.g. `-v6` to `-v7`) so phones
+After changing any file, bump `CACHE_VERSION` in `sw.js` (e.g. `-v8` to `-v9`) so phones
 that already installed it pick up the new version.
 
 ## Files
