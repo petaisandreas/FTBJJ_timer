@@ -28,6 +28,8 @@
     --line: #262626;
     --muted: #7a7a7a;
     --rest: #3FB98A;
+    --go: #2FD06B;            /* Start με hover / πάτημα / τηλεχειριστήριο */
+    --go-text: #04240F;
     --warn: #F2A52B;
     --font-display: "Helvetica Neue", "Arial Nova", Arial, sans-serif;
     --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Roboto Mono", monospace;
@@ -220,7 +222,16 @@
   }
   .btn-main { padding: 0 64px; min-width: 240px; }
   .btn-start { background: var(--accent); color: var(--accent-text); }
-  .btn-start:hover { background: var(--accent-dark); }
+  /* Πράσινο όταν το ποντίκι είναι από πάνω, όταν το πατάει το δάχτυλο (κινητό)
+     ή όταν το επιλέγει το τηλεχειριστήριο (focus στην τηλεόραση). */
+  /* Ξεχωριστοί κανόνες: παλιοί browsers τηλεόρασης πετάνε ολόκληρο τον κανόνα αν
+     δεν καταλαβαίνουν έναν selector (π.χ. :focus-visible). */
+  .btn-start:hover { background: var(--go); color: var(--go-text); }
+  .btn-start:active { background: var(--go); color: var(--go-text); }
+  .btn-start:focus { background: var(--go); color: var(--go-text); outline: none; }
+  /* Νέοι browsers: μετά από κλικ με ποντίκι να μη μένει πράσινο. Οι παλιοί αγνοούν
+     αυτόν τον κανόνα, άρα εκεί το focus του τηλεχειριστηρίου μένει πράσινο. */
+  .btn-start:focus:not(:focus-visible):not(:hover):not(:active) { background: var(--accent); color: var(--accent-text); }
   .btn-pause { background: var(--warn); color: #2a1a00; }
   .btn-pause:hover { background: #d18a1c; }
   .btn-stop { padding: 0 42px; background: #1c1c1c; color: #aaa; font-size: 18px; }
