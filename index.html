@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="el">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FT BJJ Timer</title>
-<meta name="description" content="Round timer για το FT BJJ Limassol — γύροι, ξεκούραση και ηχητικά σήματα.">
+<meta name="description" content="Round timer for FT BJJ Limassol: rounds, rest and sound cues.">
 <meta name="theme-color" content="#0a0a0a">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -281,7 +281,7 @@
     </div>
     <div class="live-clock-container">
       <div class="live-time" id="live-time">00:00:00</div>
-      <div class="live-date" id="live-date">Δευτέρα, 1 Ιανουαρίου</div>
+      <div class="live-date" id="live-date">Monday 1 January</div>
     </div>
   </div>
 
@@ -483,7 +483,7 @@ function updateLiveClock() {
   document.getElementById('live-time').textContent = hrs + ':' + mins + ':' + secs;
   
   const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-  document.getElementById('live-date').textContent = now.toLocaleDateString('el-GR', options);
+  document.getElementById('live-date').textContent = now.toLocaleDateString('en-GB', options);
 }
 updateLiveClock();
 setInterval(updateLiveClock, 1000);
